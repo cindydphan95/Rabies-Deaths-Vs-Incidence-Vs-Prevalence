@@ -6,6 +6,16 @@ SELECT * FROM..r_deaths;
 
 SELECT * FROM..r_incidence;
 
+--People who have passed from rabies in the 90's
+
+SELECT * FROM r_deaths
+WHERE year BETWEEN 1990 AND 1999;
+
+--Deaths after and including the year 2000
+
+SELECT * FROM r_deaths
+WHERE year >= 2000;
+
 --Year with most amount of rabies related deaths
 
 SELECT entity, year, MAX(deaths) AS most_deaths FROM..r_deaths
@@ -47,13 +57,12 @@ END AS 'severity'
 FROM r_deaths;
 
 --Calculate the fatality rate using deaths divided by incidences
---however in our data, there are more deaths than instances- it looks like every instance has resulted in a death
---Used NULLIF to avoid dividing by zero values
 
-SELECT r_incidence.entity, r_incidence.year, r_incidence.incidence, r_deaths.deaths, (COUNT(r_deaths.deaths) / NULLIF(COUNT(r_incidence.incidence), 0) * 100.0) AS fatality_rate FROM..r_incidence
+SELECT r_incidence.entity, r_incidence.year, r_incidence.incidence, r_deaths.deaths, (r_deaths.deaths) / (r_incidence.incidence) * 100 AS fatality_rate FROM..r_incidence
 JOIN r_deaths
 	ON r_incidence.entity = r_deaths.entity
 	AND r_incidence.year = r_deaths.year
+WHERE r_incidence.incidence > 0
 GROUP BY r_incidence.entity, r_incidence.year, r_incidence.incidence, r_deaths.deaths
 ORDER BY fatality_rate DESC;
 
@@ -66,4 +75,16 @@ AND entity NOT LIKE '%south%'
 AND entity NOT LIKE '%G20%'
 GROUP BY entity, year
 ORDER BY most_deaths DESC;
+
+--Concatenated data for an easier read
+
+SELECT CONCAT('In ', entity, ' on the year ', year, ', this many people passed from rabies: ', deaths)
+FROM r_deaths;
+
+SELECT CONCAT('In ', r_incidence.entity, ' on the year ', r_incidence.year, ', there were this many incidences: ', r_incidence.Incidence, ' versus this many deaths: ', r_deaths.deaths) 
+FROM r_incidence
+JOIN r_deaths ON r_deaths.entity = r_incidence.entity
+	AND r_deaths.year = r_incidence.year
+GROUP BY CONCAT('In ', r_incidence.entity, ' on the year ', r_incidence.year, ', there were this many incidences: ', r_incidence.Incidence, ' versus this many deaths: ', r_deaths.deaths);
+
 
